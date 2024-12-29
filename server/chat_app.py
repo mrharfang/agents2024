@@ -74,15 +74,7 @@ class ChatMessage(TypedDict):
 
 def to_chat_message(m: ModelMessage) -> ChatMessage:
 
-    print("\n" + "+"*50)
-    print(m)
-    print("\n" + "+"*50)
-
     first_part = m.parts[0]
-
-    print("\n" + "+"*50)
-    print(first_part)
-    print("\n" + "+"*50)
 
     if isinstance(m, ModelRequest):
         if isinstance(first_part, UserPromptPart):
@@ -108,7 +100,6 @@ async def post_chat(
     async def stream_messages():
         """Streams new line delimited JSON 'Message's to the client."""
         # stream the user prompt so that it can be displayed straight away
-        print("*"*50)
         yield (
             json.dumps(
                 {
