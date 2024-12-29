@@ -33,6 +33,8 @@ load_dotenv()
 
 agent = Agent('openai:gpt-4o')
 THIS_DIR = Path(__file__).parent
+DIST_DIR = THIS_DIR.parent / 'dist'
+PUBLIC_DIR = THIS_DIR.parent / 'public'
 
 @asynccontextmanager
 async def lifespan(_app: fastapi.FastAPI):
@@ -46,13 +48,11 @@ app = fastapi.FastAPI(lifespan=lifespan)
 
 @app.get('/')
 async def index() -> FileResponse:
-    return FileResponse((THIS_DIR / 'chat_app.html'), media_type='text/html')
+    return FileResponse((PUBLIC_DIR / 'chat_app.html'), media_type='text/html')
 
-
-@app.get('/chat_app.ts')
-async def main_ts() -> FileResponse:
-    """Get the raw typescript code, it's compiled in the browser, forgive me. """
-    return FileResponse((THIS_DIR / 'chat_app.ts'), media_type='text/plain')   
+@app.get('/dist/{file_path:path}')
+async def serve_static(file_path: str) -> FileResponse:
+    return FileResponse((DIST_DIR / file_path))
 
 async def get_db(request: Request) -> Database:
     return request.state.db 
@@ -61,7 +61,7 @@ async def get_db(request: Request) -> Database:
 async def get_chat(database: Database = Depends(get_db)) -> Response:
     msgs = await database.get_messages()
     return Response(
-        b'\n'.join( json.dumps(to_chat_messages(msgs)).encode('utf-8') for msg in msgs),
+        b'\n'.join(json.dumps(to_chat_message(msg)).encode('utf-8') for msg in msgs),
         media_type='text/plain'
     )
 
@@ -73,24 +73,22 @@ class ChatMessage(TypedDict):
     content: str
 
 def to_chat_message(m: ModelMessage) -> ChatMessage:
-
     first_part = m.parts[0]
-
     if isinstance(m, ModelRequest):
         if isinstance(first_part, UserPromptPart):
             return {
                 'role': 'user',
-                'timestamp': m.timestamp.isoformat(),
-                'content': first_part.content
+                'timestamp': first_part.timestamp.isoformat(),
+                'content': first_part.content,
             }
     elif isinstance(m, ModelResponse):
         if isinstance(first_part, TextPart):
             return {
                 'role': 'model',
                 'timestamp': m.timestamp.isoformat(),
-                'content': first_part.content
+                'content': first_part.content,
             }
-    raise UnexpectedModelBehavior(f'Unexpected message type: {m}')
+    raise UnexpectedModelBehavior(f'Unexpected message type for chat app: {m}')
 
 
 @app.post('/chat')

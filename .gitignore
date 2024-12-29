@@ -3,3 +3,6 @@
 /server/chat_app.messages.sqlite
 /REFERENCE
 /__pycache__
+node_modules
+/.parcel-cache
+

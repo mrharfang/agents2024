@@ -1,4 +1,4 @@
-import {marked} from 'https://cdnjs.cloudflare.com/ajax/libs/marked/15.0.0/lib/marked.esm.js'
+import {marked} from 'marked'
 const convElement = document.getElementById('conversation')
 
 const promptInput = document.getElementById('prompt-input') as HTMLInputElement
